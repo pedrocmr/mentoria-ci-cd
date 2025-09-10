@@ -7,11 +7,13 @@
     "start": "node src/index.js",
     "dev": "node src/index.js",
     "test": "node test/test.js",
+    "test:features": "node test/featureFlags.test.js",
     "lint": "echo 'Running lint checks...' && node scripts/lint.js",
     "build": "echo 'Building application...' && node scripts/build.js",
     "deploy:dev": "node scripts/deploy.js dev",
     "deploy:staging": "node scripts/deploy.js staging",
-    "deploy:production": "node scripts/deploy.js production"
+    "deploy:production": "node scripts/deploy.js production",
+    "simulate:teams": "node examples/team-development-simulation.js"
   },
   "keywords": ["ci-cd", "trunk-based-development", "devops", "mentoria"],
   "author": "Pedro CMR",
