@@ -1,0 +1,19 @@
+{
+  "name": "mentoria-ci-cd",
+  "version": "1.0.0",
+  "description": "Mentoria CI/CD project with trunk-based development and fake environment deployments",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node src/index.js",
+    "test": "node test/test.js",
+    "lint": "echo 'Running lint checks...' && node scripts/lint.js",
+    "build": "echo 'Building application...' && node scripts/build.js",
+    "deploy:dev": "node scripts/deploy.js dev",
+    "deploy:staging": "node scripts/deploy.js staging",
+    "deploy:production": "node scripts/deploy.js production"
+  },
+  "keywords": ["ci-cd", "trunk-based-development", "devops", "mentoria"],
+  "author": "Pedro CMR",
+  "license": "ISC"
+}
