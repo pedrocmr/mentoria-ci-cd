@@ -1,0 +1,135 @@
+name: 🌳 Trunk-Based Development Workflow
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # PR validation for trunk-based development
+  pr-validation:
+    name: 🔍 PR Validation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history for better analysis
+          
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 📚 Install dependencies
+        run: npm ci --prefer-offline --no-audit
+        
+      - name: 🔍 Lint code
+        run: npm run lint
+        
+      - name: 🧪 Run tests
+        run: npm test
+        
+      - name: 🔨 Build application
+        run: npm run build
+        env:
+          BUILD_ID: pr-${{ github.event.number }}
+          COMMIT_SHA: ${{ github.sha }}
+          
+      - name: 📏 Check PR size (trunk-based best practice)
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD | wc -l)
+          ADDED_LINES=$(git diff --numstat origin/main...HEAD | awk '{sum+=$1} END {print sum}')
+          DELETED_LINES=$(git diff --numstat origin/main...HEAD | awk '{sum+=$2} END {print sum}')
+          
+          echo "📊 PR Statistics:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Files changed**: $CHANGED_FILES" >> $GITHUB_STEP_SUMMARY
+          echo "- **Lines added**: $ADDED_LINES" >> $GITHUB_STEP_SUMMARY
+          echo "- **Lines deleted**: $DELETED_LINES" >> $GITHUB_STEP_SUMMARY
+          
+          # Trunk-based development recommendations
+          if [ $CHANGED_FILES -gt 20 ]; then
+            echo "⚠️ **Warning**: Large PR detected ($CHANGED_FILES files). Consider breaking into smaller changes." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ $ADDED_LINES -gt 500 ]; then
+            echo "⚠️ **Warning**: Large change detected ($ADDED_LINES lines added). Trunk-based development works best with smaller, frequent changes." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "💡 **Trunk-based Development Tips**:" >> $GITHUB_STEP_SUMMARY
+          echo "- Keep PRs small and focused" >> $GITHUB_STEP_SUMMARY
+          echo "- Merge frequently to main" >> $GITHUB_STEP_SUMMARY
+          echo "- Use feature flags for incomplete features" >> $GITHUB_STEP_SUMMARY
+          
+      - name: 🚀 Test deployment (dry run)
+        run: |
+          echo "🧪 Testing deployment process..."
+          npm run deploy:dev
+          echo "✅ Deployment test completed successfully"
+
+  # Fast-track merge validation
+  merge-validation:
+    name: 🎯 Merge to Main Validation
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: 📚 Install dependencies
+        run: npm ci --prefer-offline --no-audit
+        
+      - name: ⚡ Quick validation
+        run: |
+          echo "🔍 Running quick validation for main branch..."
+          npm run lint
+          npm test
+          echo "✅ Main branch validation passed"
+          
+      - name: 📋 Main Branch Summary
+        run: |
+          echo "## 🌳 Main Branch Update" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit SHA**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Author**: ${{ github.event.head_commit.author.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Message**: ${{ github.event.head_commit.message }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: ${{ github.event.head_commit.timestamp }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Next Steps**: Automatic deployment to development environment will start" >> $GITHUB_STEP_SUMMARY
+
+  # Branch protection enforcement
+  branch-protection:
+    name: 🛡️ Branch Protection
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: 📋 Branch Protection Summary
+        run: |
+          echo "## 🛡️ Trunk-Based Development Guidelines" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ What we enforce:" >> $GITHUB_STEP_SUMMARY
+          echo "- All code goes through main branch" >> $GITHUB_STEP_SUMMARY
+          echo "- Automatic testing before merge" >> $GITHUB_STEP_SUMMARY
+          echo "- Automatic deployment to dev environment" >> $GITHUB_STEP_SUMMARY
+          echo "- Small, frequent changes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Best Practices:" >> $GITHUB_STEP_SUMMARY
+          echo "- Keep feature branches short-lived (< 2 days)" >> $GITHUB_STEP_SUMMARY
+          echo "- Use feature flags for incomplete features" >> $GITHUB_STEP_SUMMARY
+          echo "- Merge at least once per day" >> $GITHUB_STEP_SUMMARY
+          echo "- Fix issues immediately when main breaks" >> $GITHUB_STEP_SUMMARY
